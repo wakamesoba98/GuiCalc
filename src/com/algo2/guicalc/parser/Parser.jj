@@ -1,0 +1,94 @@
+options {
+    STATIC = false;
+}
+
+PARSER_BEGIN(Parser)
+
+package com.algo2.guicalc.parser;
+
+import com.algo2.guicalc.node.*;
+
+public class Parser {
+}
+
+PARSER_END(Parser)
+
+TOKEN : {
+    <NUM : (["0"-"9",".","E"])+>
+    | <OPEN : "(">
+    | <CLOSE : ")">
+    | <PLUSOP : "+">
+    | <MINUSOP : "-">
+    | <MULTIOP : "*">
+    | <DIVIDEOP : "/">
+    | <EQUALOP : "=">
+}
+
+SKIP : {
+    " " | "\n" | "\r"
+}
+
+public Node start() : {
+    Node root;
+}
+{
+    root = nodeAddSub() <EQUALOP> {return root;}
+}
+
+public Node nodeAddSub() :
+{
+    Node root, node;
+}
+{
+    root=nodeMulDiv()
+    (
+        <PLUSOP> node=nodeMulDiv() {
+            root = new Op(root, '+', node);
+        }
+        |
+        <MINUSOP> node=nodeMulDiv() {
+            root = new Op(root, '-', node);
+        }
+    )* {return root;}
+}
+
+private Node nodeMulDiv() :
+{
+	Node root, node;
+}
+{
+    root=nodeBracket()
+    (
+        <MULTIOP> node=nodeBracket() {
+            root = new Op(root, '*', node);
+        }
+        |
+        <DIVIDEOP> node=nodeBracket() {
+            root = new Op(root, '/', node);
+        }
+    )* {return root;}
+}
+
+private Node nodeBracket() :
+{
+    Node node;
+}
+{
+	node = nodeNum() {return node;}
+   | <OPEN> node = nodeAddSub() <CLOSE> {return node;}
+}
+
+private Node nodeNum() :
+{
+    Token token;
+}
+{
+    token=<NUM> {
+        double n = Double.parseDouble(token.image);
+        return new Num(n);
+    }
+    | <MINUSOP> token=<NUM> {
+        double n = Double.parseDouble(token.image) * (-1);
+        return new Num(n);
+    }
+}
